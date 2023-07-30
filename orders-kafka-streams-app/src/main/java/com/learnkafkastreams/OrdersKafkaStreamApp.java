@@ -1,7 +1,8 @@
 package com.learnkafkastreams;
 
 
-import com.learnkafkastreams.topology.OrdersTopology;
+import com.learnkafkastreams.handler.StreamExceptionHandler;
+import com.learnkafkastreams.topology.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.NewTopic;
@@ -22,17 +23,22 @@ public class OrdersKafkaStreamApp {
 
         // create an instance of the topology
         Topology topology = OrdersTopology.buildTopology();
+        Topology kTableTopology= KTableTopology.buildTopology();
+        Topology countTopology= KTableCountTopology.buildTopology();
+        Topology reduceTopology= KTableReduceTopology.buildTopology();
+        Topology orderTopology = OrdersTopology.ordersTopology();
 
 
         Properties config = new Properties();
         config.put(StreamsConfig.APPLICATION_ID_CONFIG, "orders-app"); // consumer group
         config.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
         config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest"); // read only the new messages
+        config.put(StreamsConfig.DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG, StreamExceptionHandler.class);
 
-        createTopics(config, List.of(OrdersTopology.ORDERS,OrdersTopology.STORES,OrdersTopology.GENERAL_ORDERS));
+        createTopics(config, List.of("AGGREGATE",OrdersTopology.ORDERS,OrdersTopology.STORES,OrdersTopology.GENERAL_ORDERS,OrdersTopology.GENERAL_REVENUES));
 
         //Create an instance of KafkaStreams
-        var kafkaStreams = new KafkaStreams(topology, config);
+        var kafkaStreams = new KafkaStreams(orderTopology, config);
 
         //This closes the streams anytime the JVM shuts down normally or abruptly.
         Runtime.getRuntime().addShutdownHook(new Thread(kafkaStreams::close));
