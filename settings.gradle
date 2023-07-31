@@ -1,2 +1,3 @@
 rootProject.name = 'kafka-streams'
 include 'orders-kafka-streams-app'
+include 'advanced-streams'
